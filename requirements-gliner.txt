@@ -1,0 +1,10 @@
+# GLiNER – run NER locally with zero-shot entity labels
+# Install after main requirements: pip install -r requirements.txt && pip install -r requirements-gliner.txt
+# Then add "gliner" to SECUREGATE_DETECTORS in securegate.env (e.g. pattern,prompt_injection,gliner,ner,semantic,llm_classifier)
+
+# GLiNER (PyPI: requires torch>=2.0, transformers>=4.51.3,<5.2.0, huggingface_hub, tqdm, onnxruntime, sentencepiece)
+gliner>=0.2.19
+
+# Align with GLiNER's transformers constraint if needed (main requirements.txt has transformers>=4.46)
+# Uncomment if you get "model type gliner not recognized" or similar:
+# transformers>=4.51.3,<5.2.0

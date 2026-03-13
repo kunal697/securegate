@@ -5,10 +5,13 @@ Supports two modes (via SECUREGATE_LLM_BACKEND):
 - gemini / self_hosted: Uses remote LLM (Gemini API or your OpenAI-compatible server).
 """
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from securegate.detectors.base import BaseDetector
 from securegate.models import DetectionResult, SensitivityCategory
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from transformers import Pipeline
@@ -67,6 +70,7 @@ class LLMClassifier(BaseDetector):
         base_url = s.llm_base_url if backend == "self_hosted" else ""
         model = s.llm_model or ""
         if backend == "gemini" and not api_key:
+            logger.warning("LLM classifier: backend=gemini but GEMINI_API_KEY is empty; returning Safe. Set GEMINI_API_KEY in securegate.env")
             return DetectionResult(
                 detected=False,
                 category=SensitivityCategory.SAFE,
@@ -83,6 +87,7 @@ class LLMClassifier(BaseDetector):
                 detector_name=self.name,
             )
         trunc = text[: self.max_length]
+        logger.debug("LLM classifier: calling remote backend=%s model=%s", backend, model or "(default)")
         label, conf = classify_remote(trunc, backend, api_key=api_key, base_url=base_url, model=model)
         if label == "safe general text" or conf < self.min_score:
             return DetectionResult(
@@ -130,8 +135,8 @@ class LLMClassifier(BaseDetector):
             backend = Settings().llm_backend
             if backend in ("gemini", "self_hosted"):
                 return self._detect_remote(text)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("LLM classifier: remote failed (%s), falling back to local BART: %s", type(e).__name__, e)
         # Local BART
         trunc = text[: self.max_length]
         try:

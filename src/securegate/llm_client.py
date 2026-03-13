@@ -29,6 +29,7 @@ _gemini_lock = threading.Lock()
 
 def acquire_gemini_rate_limit() -> None:
     """Wait so that at most 1 Gemini request runs per GEMINI_MIN_INTERVAL seconds (global)."""
+    global _gemini_last_call
     if GEMINI_MIN_INTERVAL <= 0:
         return
     with _gemini_lock:
@@ -143,14 +144,29 @@ def classify_via_gemini(text: str, api_key: str, model: str = "gemini-2.0-flash"
         return "safe general text", 0.0
 
     try:
-        part = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [{}])[0]
-        raw = part.get("text", "").strip()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            logger.warning("Gemini classify: no candidates (possible safety block or empty response)")
+            return "safe general text", 0.0
+        first = candidates[0]
+        finish_reason = first.get("finishReason") or first.get("finish_reason") or ""
+        if finish_reason.upper() in ("SAFETY", "RECITATION", "BLOCKED"):
+            # Model refused to output (often when input looks sensitive) — treat as likely sensitive
+            logger.info("Gemini classify: response blocked (finishReason=%s), inferring sensitive", finish_reason)
+            return "contains passwords or API keys", 0.75
+        content = first.get("content") or {}
+        parts = content.get("parts") or [{}]
+        part = parts[0] if parts else {}
+        raw = (part.get("text") or "").strip()
+        if not raw:
+            logger.warning("Gemini classify: empty text in response (finishReason=%s)", finish_reason)
+            return "safe general text", 0.0
         label = _normalize_label(raw)
-        # No score from Gemini; use 0.85 if we matched a non-safe label
         conf = 0.85 if label != "safe general text" else 0.5
+        logger.info("LLM classifier (Gemini) label=%s confidence=%.2f", label, conf)
         return label, conf
     except Exception as e:
-        logger.warning("Gemini classify parse failed: %s", e)
+        logger.warning("Gemini classify parse failed: %s (response keys: %s)", e, list(data.keys()) if isinstance(data, dict) else "n/a")
         return "safe general text", 0.0
 
 

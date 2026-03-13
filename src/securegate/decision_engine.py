@@ -22,6 +22,7 @@ CATEGORY_PRIORITY = [
 DEFAULT_WEIGHTS = {
     "pattern": 0.95,
     "ner": 0.85,
+    "gliner": 0.82,
     "semantic": 0.75,
     "llm_classifier": 0.70,
     "prompt_injection": 0.90,
@@ -49,17 +50,16 @@ def aggregate_results(
     results: list,
     weights: dict = None,
 ) -> dict:
-    """Aggregate weighted scores per category."""
-    w = weights or DEFAULT_WEIGHTS
+    """Aggregate scores per category: max confidence wins so thresholds apply to actual detector output."""
+    _ = weights or DEFAULT_WEIGHTS  # reserved for future weighted combination
     scores = {}
 
     for r in results:
-        if not r.detected:
+        if not r.detected or r.category is None or r.category == SensitivityCategory.SAFE:
             continue
-        weight = w.get(r.detector_name, 0.7)
-        weighted = r.confidence * weight
-        if r.category not in scores or weighted > scores[r.category]:
-            scores[r.category] = weighted
+        # Use raw confidence so a single detector (e.g. llm_classifier at 0.76) can exceed threshold (0.70)
+        if r.category not in scores or r.confidence > scores[r.category]:
+            scores[r.category] = r.confidence
 
     return scores
 

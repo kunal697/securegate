@@ -41,6 +41,7 @@ def _build_detectors() -> list:
         PromptInjectionDetector,
         SemanticAnalyzer,
     )
+    from securegate.detectors import GLiNERDetector
 
     if settings.lite_mode:
         return [PatternDetector(), PromptInjectionDetector()]
@@ -51,6 +52,11 @@ def _build_detectors() -> list:
         detectors.append(PatternDetector())
     if "prompt_injection" in enabled:
         detectors.append(PromptInjectionDetector())
+    if "gliner" in enabled and GLiNERDetector is not None:
+        try:
+            detectors.append(GLiNERDetector())
+        except Exception as e:
+            logger.warning("GLiNER detector skipped (pip install -r requirements-gliner.txt): %s", e)
     if "ner" in enabled:
         try:
             detectors.append(NERDetector())
