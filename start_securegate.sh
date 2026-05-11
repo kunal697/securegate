@@ -103,11 +103,11 @@ start_with_proxy_same_terminal() {
   echo ""
   trap 'kill $API_PID 2>/dev/null; echo "API stopped."' EXIT
 
-  if [ -x "$ROOT/.venv-proxy/bin/mitmproxy" ]; then
-    exec "$ROOT/.venv-proxy/bin/mitmproxy" -s "$ROOT/addon.py" --listen-port "$PROXY_PORT"
+  if [ -x "$ROOT/.venv-proxy/bin/mitmdump" ]; then
+    exec "$ROOT/.venv-proxy/bin/mitmdump" -s "$ROOT/addon.py" --listen-port "$PROXY_PORT"
   fi
-  if [ -f "$ROOT/.venv-proxy/bin/mitmproxy" ]; then
-    exec "$ROOT/.venv-proxy/bin/mitmproxy" -s "$ROOT/addon.py" --listen-port "$PROXY_PORT"
+  if [ -f "$ROOT/.venv-proxy/bin/mitmdump" ]; then
+    exec "$ROOT/.venv-proxy/bin/mitmdump" -s "$ROOT/addon.py" --listen-port "$PROXY_PORT"
   fi
 
   echo "No .venv-proxy found. Create it, then run again or use a second terminal:"

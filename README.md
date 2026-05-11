@@ -9,8 +9,12 @@ SecureGate is an intermediary security layer between users and AI models that de
 - **Hybrid Detection**: Pattern (regex), NER (Presidio/spaCy), Semantic (embeddings), LLM zero-shot, Prompt injection
 - **No API keys for detectors**: All detectors (including the “LLM classifier”) run locally. If you have not installed `transformers` and `torch`, the LLM classifier is still listed but does not run the model; it will always report "No" / Safe in the dashboard (the other four detectors work as usual). The LLM classifier uses Hugging Face’s BART-MNLI model on your machine—no OpenAI/Claude or other cloud LLM credentials required.
 - **Policy-driven**: Configurable category–action mapping and thresholds
-- **Actions**: Allow, Mask, Block, Quarantine
+- **Actions**: Allow, Mask, Block
 - **Explainable**: Traceable reasoning and entity spans
+
+## Documentation
+
+- **[Scoring and decision formulas](docs/SCORING_AND_DECISION_FORMULAS.md)** — how per-detector confidence, per-category scores `S(c)`, thresholds, and Allow/Mask/Block are computed.
 
 ## Quick Start
 
@@ -106,8 +110,8 @@ PYTHONPATH=src pytest tests/test_methodology_llm_classifier.py -v
 | GET | `/health` | Health check |
 | POST | `/analyze` | Analyze text (body: `AnalysisRequest`) |
 | POST | `/analyze/text` | Analyze text (body: `{"text": "..."}`) |
-| GET | `/dashboard` | Analytics dashboard (Block/Quarantine/Mask/Allow, by category, detector breakdown) |
-| GET | `/api/stats` | Stats JSON (total, blocked, quarantined, masked, allowed, by_action, by_category) |
+| GET | `/dashboard` | Analytics dashboard (Block/Mask/Allow, by category, detector breakdown) |
+| GET | `/api/stats` | Stats JSON (total, blocked, masked, allowed, by_action, by_category) |
 | GET | `/api/events` | Recent audit events JSON |
 
 ## Project Structure

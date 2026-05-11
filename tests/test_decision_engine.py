@@ -64,10 +64,10 @@ def test_decide_credentials_blocks():
     assert "Credentials" in reason and "Block" in reason
 
 
-def test_decide_health_quarantine():
+def test_decide_health_blocks():
     scores = {SensitivityCategory.HEALTH_INFO: 0.75}
     action, category, score, reason = decide(scores)
-    assert action == Action.QUARANTINE
+    assert action == Action.BLOCK
     assert category == SensitivityCategory.HEALTH_INFO
 
 

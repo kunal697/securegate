@@ -1,0 +1,4 @@
+# SecureGate MITM Proxy - system-wide interception
+mitmproxy>=10.0.0
+requests>=2.31.0
+pyyaml>=6.0

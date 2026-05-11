@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureGate — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: { gate: { 50: '#ecfeff', 100: '#cffafe', 200: '#a5f3fc', 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490', 800: '#155e75', 900: '#164e63' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .drop-zone.dragover { border-color: #06b6d4; background: rgba(6, 182, 212, 0.08); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-56 shrink-0 border-r border-slate-800 bg-slate-900/50 flex flex-col">
+      <div class="p-5 border-b border-slate-800">
+        <a href="/dashboard" class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-gate-600 flex items-center justify-center text-white font-semibold text-sm">SG</span>
+          <span class="font-semibold text-slate-100">SecureGate</span>
+        </a>
+      </div>
+      <nav class="p-3 flex-1">
+        <button data-panel="overview" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-3">
+          <span class="text-slate-500">◇</span> Overview
+        </button>
+        <button data-panel="tryit" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-3">
+          <span class="text-slate-500">◆</span> Try it
+        </button>
+        <button data-panel="upload" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-3">
+          <span class="text-slate-500">▸</span> Upload labels
+        </button>
+        <button data-panel="events" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-3">
+          <span class="text-slate-500">◉</span> Events
+        </button>
+      </nav>
+      <div class="p-3 border-t border-slate-800 text-xs text-slate-500">Sensitive data detection</div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 overflow-auto">
+      <!-- Overview -->
+      <section id="panel-overview" class="panel active p-8">
+        <h1 class="text-2xl font-semibold text-slate-100 mb-2">Overview</h1>
+        <p class="text-slate-400 text-sm mb-8">Last 24 hours — actions and categories</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-slate-700/80">
+            <div class="text-slate-400 text-sm font-medium mb-1">Total</div>
+            <div id="total" class="text-2xl font-semibold text-slate-100">—</div>
+          </div>
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-red-900/50">
+            <div class="text-red-400 text-sm font-medium mb-1">Blocked</div>
+            <div id="blocked" class="text-2xl font-semibold text-red-400">—</div>
+          </div>
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-amber-900/50">
+            <div class="text-amber-400 text-sm font-medium mb-1">Masked</div>
+            <div id="masked" class="text-2xl font-semibold text-amber-400">—</div>
+          </div>
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-emerald-900/50">
+            <div class="text-emerald-400 text-sm font-medium mb-1">Allowed</div>
+            <div id="allowed" class="text-2xl font-semibold text-emerald-400">—</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-slate-700/80">
+            <h2 class="text-sm font-semibold text-slate-300 mb-4">By action</h2>
+            <canvas id="chartActions" height="220"></canvas>
+          </div>
+          <div class="bg-slate-800/80 rounded-xl p-5 border border-slate-700/80">
+            <h2 class="text-sm font-semibold text-slate-300 mb-4">By category</h2>
+            <canvas id="chartCategory" height="220"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Try it -->
+      <section id="panel-tryit" class="panel p-8">
+        <h1 class="text-2xl font-semibold text-slate-100 mb-2">Try it</h1>
+        <p class="text-slate-400 text-sm mb-6">Analyze text with optional custom labels (from Upload labels).</p>
+        <div class="max-w-3xl space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">Text to analyze</label>
+            <textarea id="tryit-text" rows="5" class="w-full rounded-xl bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 px-4 py-3 focus:ring-2 focus:ring-gate-500/50 focus:border-gate-500 outline-none" placeholder="Paste or type text to check for PII, credentials, etc."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">Custom labels (optional)</label>
+            <div id="tryit-labels" class="flex flex-wrap gap-2 min-h-10 p-3 rounded-xl bg-slate-800/60 border border-slate-700/80">
+              <span class="text-slate-500 text-sm">Add labels via "Upload labels" or type below and press Enter</span>
+            </div>
+            <input type="text" id="tryit-label-input" class="mt-2 w-full rounded-lg bg-slate-800 border border-slate-700 text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-gate-500/50 outline-none" placeholder="Type a label and press Enter">
+          </div>
+          <button id="tryit-analyze" class="px-5 py-2.5 rounded-lg bg-gate-600 hover:bg-gate-500 text-white font-medium transition-colors">Analyze</button>
+          <div id="tryit-result" class="rounded-xl bg-slate-800/80 border border-slate-700 p-5 hidden">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Result</h3>
+            <div id="tryit-result-body" class="text-sm space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Upload labels -->
+      <section id="panel-upload" class="panel p-8">
+        <h1 class="text-2xl font-semibold text-slate-100 mb-2">Upload labels</h1>
+        <p class="text-slate-400 text-sm mb-6">Upload a PDF or text file. We extract text and suggest labels (e.g. one per line) for GLiNER and detectors.</p>
+        <div class="max-w-3xl space-y-6">
+          <div id="drop-zone" class="drop-zone border-2 border-dashed border-slate-600 rounded-xl p-12 text-center text-slate-400 hover:border-slate-500 transition-colors cursor-pointer">
+            <input type="file" id="file-input" class="hidden" accept=".pdf,.txt,text/plain,application/pdf">
+            <p class="font-medium text-slate-300">Drop PDF or .txt here, or click to choose</p>
+            <p class="text-sm mt-1">Extracted lines become suggested labels</p>
+          </div>
+          <div id="upload-result" class="hidden space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-2">Extracted text</label>
+              <textarea id="upload-text" rows="6" class="w-full rounded-xl bg-slate-800 border border-slate-700 text-slate-100 px-4 py-3 text-sm" readonly></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-2">Suggested labels (one per line — edit as needed, then use in Try it)</label>
+              <textarea id="upload-labels-edit" rows="6" class="w-full rounded-xl bg-slate-800 border border-slate-700 text-slate-100 px-4 py-3 text-sm font-mono" placeholder="One label per line"></textarea>
+              <button id="upload-use-labels" class="mt-3 px-4 py-2 rounded-lg bg-gate-600 hover:bg-gate-500 text-white text-sm font-medium transition-colors">Use these labels in Try it</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Events -->
+      <section id="panel-events" class="panel p-8">
+        <h1 class="text-2xl font-semibold text-slate-100 mb-2">Recent events</h1>
+        <p class="text-slate-400 text-sm mb-6">Click a row for detector breakdown. <span class="text-slate-500">Result in Try it = your last Analyze. Details here = the event row you clicked (may be a different request).</span></p>
+        <div class="rounded-xl border border-slate-700/80 bg-slate-800/50 overflow-hidden">
+          <div id="events" class="overflow-x-auto max-h-[70vh] overflow-y-auto"></div>
+          <div id="eventDetail" class="border-t border-slate-700 p-5 bg-slate-900/80 hidden">
+            <h3 class="font-semibold text-gate-400 mb-3">Request details</h3>
+            <div id="eventDetailContent" class="text-sm text-slate-300"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let chartActions, chartCategory, eventsData = [];
+    let customLabelsForTryit = [];
+
+    // Navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = btn.getAttribute('data-panel');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-slate-800', 'text-white'); b.classList.add('text-slate-300'); });
+        document.getElementById('panel-' + panel).classList.add('active');
+        btn.classList.add('bg-slate-800', 'text-white'); btn.classList.remove('text-slate-300');
+      });
+    });
+    document.querySelector('[data-panel="overview"]').classList.add('bg-slate-800', 'text-white');
+
+    // Try it: label chips + input
+    function renderTryitLabels() {
+      const el = document.getElementById('tryit-labels');
+      if (customLabelsForTryit.length === 0) {
+        el.innerHTML = '<span class="text-slate-500 text-sm">No custom labels. Add via Upload labels or type below.</span>';
+        return;
+      }
+      el.innerHTML = customLabelsForTryit.map((l, i) =>
+        '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gate-900/60 text-gate-300 text-sm">' + escapeHtml(l) + '<button type="button" data-i="' + i + '" class="remove-label text-slate-500 hover:text-white">&times;</button></span>'
+      ).join('');
+      el.querySelectorAll('.remove-label').forEach(b => b.addEventListener('click', () => { customLabelsForTryit.splice(+b.getAttribute('data-i'), 1); renderTryitLabels(); }));
+    }
+    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    document.getElementById('tryit-label-input').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const v = e.target.value.trim();
+      if (v && !customLabelsForTryit.includes(v)) { customLabelsForTryit.push(v); renderTryitLabels(); e.target.value = ''; }
+    });
+    renderTryitLabels();
+
+    // Try it: Analyze
+    document.getElementById('tryit-analyze').addEventListener('click', async () => {
+      const text = document.getElementById('tryit-text').value.trim();
+      if (!text) { document.getElementById('tryit-result-body').innerHTML = '<p class="text-amber-400">Enter some text to analyze.</p>'; document.getElementById('tryit-result').classList.remove('hidden'); return; }
+      const body = { text };
+      if (customLabelsForTryit.length) body.custom_labels = customLabelsForTryit;
+      try {
+        const r = await fetch(API + '/analyze/text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        const act = data.action || '-';
+        const cls = act === 'Block' ? 'text-red-400' : act === 'Mask' ? 'text-amber-400' : 'text-emerald-400';
+        let html = '<p><span class="text-slate-500">Action:</span> <span class="' + cls + ' font-semibold">' + act + '</span></p>';
+        html += '<p><span class="text-slate-500">Category:</span> ' + (data.category || '-') + '</p>';
+        html += '<p><span class="text-slate-500">Score:</span> ' + (data.sensitivity_score ?? '-') + '</p>';
+        html += '<p class="text-slate-400">' + escapeHtml(data.reasoning || '') + '</p>';
+        if (act === 'Mask' && data.masked_text) {
+          html += '<div class="mt-3 pt-3 border-t border-slate-700"><p class="text-slate-500 text-sm font-medium mb-1">Masked text (safe to use)</p><p class="text-slate-200 font-mono text-sm whitespace-pre-wrap break-words">' + escapeHtml(data.masked_text) + '</p></div>';
+        }
+        if (data.detector_results && data.detector_results.length) {
+          html += '<table class="w-full mt-3 text-sm"><thead><tr class="text-left text-slate-500"><th>Detector</th><th>Detected</th><th>Confidence</th><th>Category</th></tr></thead><tbody>';
+          data.detector_results.forEach(d => { html += '<tr class="border-t border-slate-700"><td class="py-1 font-mono">' + (d.detector_name || '-') + '</td><td>' + (d.detected ? 'Yes' : 'No') + '</td><td>' + (d.confidence ?? '-') + '</td><td>' + (d.category || '-') + '</td></tr>'; });
+          html += '</tbody></table>';
+        }
+        document.getElementById('tryit-result-body').innerHTML = html;
+        document.getElementById('tryit-result').classList.remove('hidden');
+      } catch (e) {
+        document.getElementById('tryit-result-body').innerHTML = '<p class="text-red-400">Request failed: ' + escapeHtml(e.message) + '</p>';
+        document.getElementById('tryit-result').classList.remove('hidden');
+      }
+    });
+
+    // Upload: drag-drop and file input
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+    async function handleFile(file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const r = await fetch(API + '/api/upload-document', { method: 'POST', body: fd });
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        document.getElementById('upload-text').value = data.text || '';
+        const labels = data.suggested_labels || [];
+        document.getElementById('upload-labels-edit').value = labels.join('\n');
+        document.getElementById('upload-result').classList.remove('hidden');
+      } catch (e) {
+        alert('Upload failed: ' + e.message);
+      }
+    }
+
+    document.getElementById('upload-use-labels').addEventListener('click', () => {
+      const raw = document.getElementById('upload-labels-edit').value || '';
+      const labels = raw.split('\n').map(s => s.trim()).filter(Boolean);
+      customLabelsForTryit = [...new Set([...customLabelsForTryit, ...labels])];
+      renderTryitLabels();
+      document.querySelector('[data-panel="tryit"]').click();
+    });
+
+    // Events: render table and detail
+    function renderDetectorTable(detectors) {
+      if (!detectors || !detectors.length) return '<p class="text-slate-500 text-sm">No detector breakdown</p>';
+      let rows = detectors.map(d => '<tr class="border-b border-slate-700"><td class="py-2 pr-4 font-mono text-sm">' + (d.detector_name || '-') + '</td><td class="py-2 pr-4"><span class="px-2 py-0.5 rounded text-xs ' + (d.detected ? 'bg-amber-900/50 text-amber-400' : 'bg-slate-700 text-slate-400') + '">' + (d.detected ? 'Yes' : 'No') + '</span></td><td class="py-2 pr-4">' + (d.confidence ?? '-') + '</td><td class="py-2 pr-4">' + (d.category || '-') + '</td><td class="py-2">' + (d.entity_count ?? 0) + '</td></tr>').join('');
+      return '<table class="w-full text-sm"><thead><tr class="text-left text-slate-500"><th>Detector</th><th>Detected</th><th>Confidence</th><th>Category</th><th>Entities</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+    function actionClass(a) {
+      if (a === 'Block') return 'text-red-400'; if (a === 'Mask') return 'text-amber-400'; return 'text-emerald-400';
+    }
+    function showDetail(e) {
+      const content = document.getElementById('eventDetailContent');
+      const dr = renderDetectorTable(e.detector_results || []);
+      content.innerHTML = '<div class="grid grid-cols-2 gap-2 mb-4"><div><span class="text-slate-500">Action:</span> <span class="' + actionClass(e.action) + ' font-medium">' + (e.action || '-') + '</span></div><div><span class="text-slate-500">Category:</span> ' + (e.category || '-') + '</div><div><span class="text-slate-500">Score:</span> ' + (e.score ?? '-') + '</div><div><span class="text-slate-500">Entities:</span> ' + (e.entity_count ?? 0) + '</div></div><div class="mb-4"><span class="text-slate-500">Reasoning:</span> <span class="text-slate-300">' + escapeHtml(e.reasoning || '-') + '</span></div><div class="mb-4"><span class="text-slate-500">Text preview:</span> <span class="text-slate-400">' + escapeHtml(e.text_preview || '-') + '</span></div><div class="mb-2 text-slate-500 text-sm font-medium">Detector breakdown</div>' + dr;
+      document.getElementById('eventDetail').classList.remove('hidden');
+    }
+
+    async function load() {
+      const [stats, events] = await Promise.all([
+        fetch(API + '/api/stats').then(r => r.json()),
+        fetch(API + '/api/events?limit=50').then(r => r.json())
+      ]);
+      eventsData = events;
+      document.getElementById('total').textContent = stats.total;
+      document.getElementById('blocked').textContent = stats.blocked;
+      document.getElementById('masked').textContent = stats.masked;
+      document.getElementById('allowed').textContent = stats.allowed;
+      const byAction = stats.by_action || {};
+      const byCategory = stats.by_category || {};
+      const actionColors = { Block: '#ef4444', Mask: '#f59e0b', Allow: '#22c55e' };
+      const actionOrder = ['Block','Mask','Allow'];
+      const labels = actionOrder.filter(l => (byAction[l] || 0) > 0).length ? actionOrder.filter(l => (byAction[l] || 0) > 0) : Object.keys(byAction);
+      const data = labels.map(l => byAction[l] || 0);
+      const colors = labels.map(l => actionColors[l] || '#64748b');
+      if (chartActions) chartActions.destroy();
+      chartActions = new Chart(document.getElementById('chartActions'), { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors }] }, options: { plugins: { legend: { labels: { color: '#94a3b8' } } } } });
+      if (chartCategory) chartCategory.destroy();
+      chartCategory = new Chart(document.getElementById('chartCategory'), { type: 'bar', data: { labels: Object.keys(byCategory), datasets: [{ label: 'Count', data: Object.values(byCategory), backgroundColor: '#06b6d4' }] }, options: { scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } } });
+      const html = events.length ? events.map((e, i) => {
+        const act = e.action || '-';
+        const cls = act === 'Block' ? 'text-red-400' : act === 'Mask' ? 'text-amber-400' : 'text-emerald-400';
+        return '<div class="flex justify-between items-center py-3 px-4 border-b border-slate-700/80 hover:bg-slate-800/50 cursor-pointer text-sm" onclick="showDetail(eventsData[' + i + '])"><span class="' + cls + ' font-medium">' + act + '</span><span class="text-slate-400">' + (e.category || '-') + '</span><span class="text-slate-500">' + (e.score ?? '-') + '</span><span class="text-slate-500 font-mono">' + (e.ts || '').replace('T',' ').slice(0,19) + '</span></div>';
+      }).join('') : '<p class="p-6 text-slate-500">No events yet.</p>';
+      document.getElementById('events').innerHTML = html;
+    }
+    load();
+    setInterval(load, 10000);
+  </script>
+</body>
+</html>

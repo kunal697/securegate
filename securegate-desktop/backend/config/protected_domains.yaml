@@ -1,0 +1,11 @@
+# Domains to inspect for sensitive data. Add more as needed.
+# Only traffic to these hosts is analyzed by SecureGate.
+protected_domains:
+  - chatgpt.com
+  - api.openai.com
+  - chat.openai.com
+  - api.anthropic.com
+  - generativelanguage.googleapis.com
+  - api.cohere.ai
+  - api.groq.com
+  - api.together.xyz

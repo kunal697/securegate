@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureGate Loading...</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen">
+  <div class="text-center p-8 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 max-w-md w-full">
+    <div class="flex justify-center mb-6">
+      <div class="relative w-16 h-16">
+        <div class="absolute inset-0 border-4 border-cyan-500/20 rounded-full"></div>
+        <div class="absolute inset-0 border-4 border-cyan-500 rounded-full border-t-transparent animate-spin"></div>
+      </div>
+    </div>
+    
+    <h1 class="text-2xl font-bold text-white mb-2">SecureGate</h1>
+    <p class="text-slate-400 mb-6" id="status-text">Waiting for the security proxy and backend detection models to start...</p>
+    
+    <div class="space-y-3 text-sm text-left">
+      <div class="flex items-center text-slate-300">
+        <svg class="w-5 h-5 mr-3 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Initializing Electron environment
+      </div>
+      <div class="flex items-center text-slate-300" id="step-backend">
+        <svg class="w-5 h-5 mr-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="step-backend-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Loading Analysis API</span>
+      </div>
+      <div class="flex items-center text-slate-300" id="step-models">
+        <svg class="w-5 h-5 mr-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="step-models-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Loading Machine Learning Models</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate steps for UI feedback while polling happens in main.js
+    setTimeout(() => {
+      const icon = document.getElementById('step-backend-icon');
+      icon.classList.remove('text-slate-600');
+      icon.classList.add('text-cyan-500');
+      icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+      document.getElementById('status-text').innerText = 'Initializing detection models (this may take a few seconds)...';
+    }, 2000);
+  </script>
+</body>
+</html>

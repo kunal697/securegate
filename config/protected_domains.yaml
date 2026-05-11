@@ -9,3 +9,5 @@ protected_domains:
   - api.cohere.ai
   - api.groq.com
   - api.together.xyz
+  - gemini.google.com
+  - claude.ai
